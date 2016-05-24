@@ -17,44 +17,42 @@ public class ALU {
 		int decNumber = Integer.parseInt(number);
 		String[] temp = new String[length];
 		String result = new String();
-		//当十进制数为0时
-		if(decNumber==0){
-			for(int i = 0 ; i < length ; i++){
+		// 当十进制数为0时
+		if (decNumber == 0) {
+			for (int i = 0; i < length; i++) {
 				temp[i] = "0";
 			}
-			for(int i = 0 ; i < length ; i++){
+			for (int i = 0; i < length; i++) {
 				result += temp[i];
 			}
 		}
-		//当十进制数大于0时
-		else if (decNumber>0) {
+		// 当十进制数大于0时
+		else if (decNumber > 0) {
 			temp[0] = "0";
-			for(int i = 1 ; i<length;i++){
-				if(Math.pow(2, length-i-1)<=decNumber){
+			for (int i = 1; i < length; i++) {
+				if (Math.pow(2, length - i - 1) <= decNumber) {
 					temp[i] = "1";
-					decNumber -= Math.pow(2, length-i-1);
-				}
-				else {
+					decNumber -= Math.pow(2, length - i - 1);
+				} else {
 					temp[i] = "0";
 				}
 			}
-			for(int i = 0 ; i < length ; i++){
+			for (int i = 0; i < length; i++) {
 				result += temp[i];
 			}
 		}
-		//当十进制数小于0时
+		// 当十进制数小于0时
 		else {
 			temp[0] = "1";
-			for(int i = 1;i<length ;i++){
-				if((-Math.pow(2, length-1)+Math.pow(2, length-i-1))<=decNumber){
+			for (int i = 1; i < length; i++) {
+				if ((-Math.pow(2, length - 1) + Math.pow(2, length - i - 1)) <= decNumber) {
 					temp[i] = "1";
-					decNumber -= Math.pow(2, length-i-1);
-				}
-				else {
+					decNumber -= Math.pow(2, length - i - 1);
+				} else {
 					temp[i] = "0";
 				}
 			}
-			for(int i = 0 ; i < length ; i++){
+			for (int i = 0; i < length; i++) {
 				result += temp[i];
 			}
 		}
@@ -95,8 +93,26 @@ public class ALU {
 	 * @return operand的真值。若为负数；则第一位为“-”；若为正数或 0，则无符号位
 	 */
 	public String integerTrueValue (String operand) {
-		// TODO YOUR CODE HERE.
-		return null;
+		int result = 0;
+		//补码第一位为0，代表真值为正数或零
+		if (operand.substring(0, 1).equals("0")) {
+			for (int i = operand.length(); i > 0; i--) {
+				if (operand.substring(i - 1, i).equals("1")) {
+					result += Math.pow(2, operand.length() - i);
+				}
+			}
+			return result + "";
+		}
+		//补码第一位为1，代表真值为负数
+		else {
+			result =(int) -Math.pow(2, operand.length()-1);
+			for(int i = 1 ; i<operand.length() ; i++){
+				if(operand.substring(i,i+1).equals("1")){
+					result += Math.pow(2, operand.length()-i-1);
+				}
+			}
+			return result+"";
+		}
 	}
 	
 	/**
