@@ -70,8 +70,52 @@ public class ALU {
 	 * @return number的二进制表示，长度为 1+eLength+sLength。从左向右，依次为符号、指数（移码表示）、尾数（首位隐藏）
 	 */
 	public String floatRepresentation (String number, int eLength, int sLength) {
-		// TODO YOUR CODE HERE.
-		return null;
+		int totalLength = 1+eLength+sLength;
+		int base = 2;
+		int bias = (int)(Math.pow(2, eLength-1))-1;
+		int exponent = 0;
+		int dot = 0;
+		String[] results = new String[totalLength];
+		String result = "";
+		String temp = "";
+		//初始化结果
+		for(int i = 0 ;i<results.length;i++){
+			results[i] = "0";
+		}
+		//正数
+		if(number.charAt(0)!='-'){
+			String[] num = number.split("\\.");
+			String dec = "0."+num[1];
+			double d = Double.parseDouble(dec);
+			int intNumber = Integer.parseInt(num[0]);
+			//指数上溢
+			if(intNumber>(int)Math.pow(2, eLength)-1){
+				return "+inf";
+			}
+			else {
+				int length=0;
+				for(int i =0;i<eLength;i++){
+					if(intNumber>=(int) Math.pow(2, i)){
+						length=i+1;
+					}
+				}
+				temp += integerRepresentation(intNumber+"", length+1).substring(1);
+				totalLength-=temp.length();
+				dot=temp.length();
+				for(int i=1;i<sLength;i++){
+//					if(d*2)
+				}
+			}
+			
+		}
+		else {
+			results[0] ="1";
+		}
+		//生成字符串
+		for(int i=0;i<results.length;i++){
+			result += results[i];
+		}
+		return result;
 	}
 	
 	/**
@@ -82,7 +126,12 @@ public class ALU {
 	 * @return number的IEEE 754表示，长度为length。从左向右，依次为符号、指数（移码表示）、尾数（首位隐藏）
 	 */
 	public String ieee754 (String number, int length) {
-		// TODO YOUR CODE HERE.
+		if(length==32){
+			int bias = 127;
+		}
+		else{
+			int bias = 1023;
+		}
 		return null;
 	}
 	
@@ -94,7 +143,7 @@ public class ALU {
 	 */
 	public String integerTrueValue (String operand) {
 		int result = 0;
-		//补码第一位为0，代表真值为正数或零
+		// 补码第一位为0，代表真值为正数或零
 		if (operand.substring(0, 1).equals("0")) {
 			for (int i = operand.length(); i > 0; i--) {
 				if (operand.substring(i - 1, i).equals("1")) {
@@ -103,15 +152,15 @@ public class ALU {
 			}
 			return result + "";
 		}
-		//补码第一位为1，代表真值为负数
+		// 补码第一位为1，代表真值为负数
 		else {
-			result =(int) -Math.pow(2, operand.length()-1);
-			for(int i = 1 ; i<operand.length() ; i++){
-				if(operand.substring(i,i+1).equals("1")){
-					result += Math.pow(2, operand.length()-i-1);
+			result = (int) -Math.pow(2, operand.length() - 1);
+			for (int i = 1; i < operand.length(); i++) {
+				if (operand.substring(i, i + 1).equals("1")) {
+					result += Math.pow(2, operand.length() - i - 1);
 				}
 			}
-			return result+"";
+			return result + "";
 		}
 	}
 	
@@ -147,8 +196,23 @@ public class ALU {
 	 * @return operand左移n位的结果
 	 */
 	public String leftShift (String operand, int n) {
-		// TODO YOUR CODE HERE.
-		return null;
+		String[] op = new String[operand.length()];
+		for(int i=0;i<operand.length();i++){
+			op[i] = operand.substring(i,i+1);
+		}
+		for(int i=0;i<n;i++){
+			for(int j=0;j<operand.length()-1;j++){
+				op[j]=op[j+1];
+			}
+		}
+		for(int i=0;i<n;i++){
+			op[operand.length()-i-1]="0";
+		}
+		operand="";
+		for(int i=0;i<op.length;i++){
+			operand+=op[i];
+		}
+		return operand;
 	}
 	
 	/**
@@ -159,8 +223,23 @@ public class ALU {
 	 * @return operand逻辑右移n位的结果
 	 */
 	public String logRightShift (String operand, int n) {
-		// TODO YOUR CODE HERE.
-		return null;
+		String[] op = new String[operand.length()];
+		for(int i=0;i<operand.length();i++){
+			op[i] = operand.substring(i,i+1);
+		}
+		for(int i=0;i<n;i++){
+			for(int j=operand.length()-1;j>0;j--){
+				op[j]=op[j-1];
+			}
+		}
+		for(int i=0;i<n;i++){
+			op[i]="0";
+		}
+		operand="";
+		for(int i=0;i<op.length;i++){
+			operand+=op[i];
+		}
+		return operand;
 	}
 	
 	/**
@@ -171,8 +250,31 @@ public class ALU {
 	 * @return operand算术右移n位的结果
 	 */
 	public String ariRightShift (String operand, int n) {
-		// TODO YOUR CODE HERE.
-		return null;
+		String[] op = new String[operand.length()];
+		for(int i=0;i<operand.length();i++){
+			op[i] = operand.substring(i,i+1);
+		}
+		for(int i=0;i<n;i++){
+			for(int j=operand.length()-1;j>0;j--){
+				op[j]=op[j-1];
+			}
+		}
+		if(operand.charAt(0)=='0'){
+			for(int i=0;i<n;i++){
+				op[i]="0";
+			}
+		}
+		else {
+			for(int i=0;i<n;i++){
+				op[i]="1";
+			}
+		}
+		
+		operand="";
+		for(int i=0;i<op.length;i++){
+			operand+=op[i];
+		}
+		return operand;
 	}
 	
 	/**
@@ -354,5 +456,50 @@ public class ALU {
 	public String floatDivision (String operand1, String operand2, int eLength, int sLength) {
 		// TODO YOUR CODE HERE.
 		return null;
+	}
+	
+	
+	//非门
+	private String notGate (String s){
+		if(s.equals("1")){
+			return "0";
+		}
+		else {
+			return "1";
+		}
+	}
+	//与门
+	private String andGate(String s1 , String s2){
+		if(s1.equals("1")&&s2.equals("1")){
+			return "1";
+		}
+		else {
+			return "0";
+		}
+	}
+	//或门
+	private String orGate(String s1, String s2){
+		if(s1.equals("1")||s2.equals("1")){
+			return "1";
+		}
+		else {
+			return "0";
+		}
+	}
+	//异或门
+	private String xorGate(String s1 , String s2){
+		if(s1.equals(s2)){
+			return "0";
+		}
+		else {
+			return "1";
+		}
+	}
+	public static void main(String[] args){
+		ALU alu =new ALU();
+		String operand= "0000111";
+		System.out.println(alu.ariRightShift("1110000", 2));
+		System.out.println(alu.ariRightShift(operand, 2));
+		
 	}
 }
