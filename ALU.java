@@ -89,11 +89,17 @@ public class ALU {
 		for (int i = 0; i < results.length; i++) {
 			results[i] = "0";
 		}
+		// 检查输入是否为数字
+		for (int i = 0; i < number.length(); i++) {
+			if ((!Character.isDigit(number.charAt(i))) && (number.charAt(i) != '.') && (number.charAt(i) != '-')) {
+				return "NaN";
+			}
+		}
 		// 负数
 		if (number.charAt(0) == '-') {
 			results[0] = "1";
 		}
-		
+
 		String[] num = number.split("\\.");
 		String dec = "0." + num[1];
 		double d = Double.parseDouble(dec);
@@ -116,17 +122,36 @@ public class ALU {
 				d = d * 2;
 			}
 		}
-		boolean isNorm = false;
 		int newdot = 0;
 		for (int i = 0; i < dot; i++) {
 			if (temp.charAt(i) == '1') {
 				newdot = i + 1;
-				isNorm = true;
 				break;
 			}
 		}
+		// 指数上溢
+		if ((dot - newdot + bias) > ((int) Math.pow(base, eLength) - 1)) {
+			for (int i = 0; i < eLength; i++) {
+				results[i + 1] = "1";
+			}
+			for (int i = eLength + 1; i < 1 + eLength + sLength; i++) {
+				results[i] = "0";
+			}
+		}
+		// 指数下溢,反规格化
+		else if (dot - newdot + bias < 0) {
+			exponent = -((int) Math.pow(base, eLength - 1) - 1);
+			newdot = dot + bias - exponent;
+			for (int i = 0; i < eLength; i++) {
+				results[i + 1] = "0";
+			}
+			for (int i = eLength + 1; i < 1 + eLength + sLength; i++) {
+				results[i] = temp.substring(newdot, newdot + 1);
+				newdot++;
+			}
+		}
 		// 规格化
-		if (isNorm) {
+		else {
 			exponent = dot - newdot + bias;
 			for (int i = 0; i < eLength; i++) {
 				results[i + 1] = integerRepresentation(exponent + "", eLength + 1).substring(1).charAt(i) + "";
@@ -135,10 +160,6 @@ public class ALU {
 				results[i] = temp.substring(newdot, newdot + 1);
 				newdot++;
 			}
-		}
-		// 反规格化
-		else {
-			
 		}
 
 		// 生成字符串
@@ -160,15 +181,18 @@ public class ALU {
 	 * @return number的IEEE 754表示，长度为length。从左向右，依次为符号、指数（移码表示）、尾数（首位隐藏）
 	 */
 	public String ieee754(String number, int length) {
+		String result = "";
 		// 32位单精度
 		if (length == 32) {
-			int bias = 127;
+			result = floatRepresentation(number, 8, 23);
 		}
 		// 64位双精度
-		else {
-			int bias = 1023;
+		else if (length == 64) {
+			result = floatRepresentation(number, 11, 52);
+		} else {
+			result = "Not ieee754";
 		}
-		return null;
+		return result;
 	}
 
 	/**
@@ -216,8 +240,53 @@ public class ALU {
 	 *         NaN表示为“NaN”
 	 */
 	public String floatTrueValue(String operand, int eLength, int sLength) {
-		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		int base = 2;
+		int bias =(int)Math.pow(base, eLength-1)-1;
+		int exponent = 0;
+		double temp = 0.0;
+		//切割浮点数
+		String[] num = new String[3];
+		num[0] = operand.substring(0,1);
+		num[1] = operand.substring(1,eLength+1);
+		num[2] = operand.substring(eLength+1,operand.length());
+		//检查是否为NaN
+		if((!num[1].contains("0"))&&(num[2].contains("1"))){
+			return "NaN";
+		}
+		//检查是否为无穷
+		else if ((!num[1].contains("0"))&&(!num[2].contains("1"))) {
+			if(num[0].equals("0")){
+				return "+inf";
+			}
+			else {
+				return "-inf";
+			}
+		}
+		//检查是否为0
+		else if((!num[1].contains("1"))&&(!num[2].contains("1"))){
+			return "0";
+		}
+		//检查反规格化
+		else if (!num[1].contains("1")) {
+			
+		}
+		//规格化
+		else {
+			if(num[0].equals("1")){
+				result+="-";
+			}
+			temp = 1.0;
+			exponent = Integer.parseInt(integerTrueValue1(num[1]))-bias;
+			for(int i=0;i<sLength;i++){
+				if(num[2].charAt(i)=='1')
+					temp += Math.pow(base, -i-1);
+			}
+			temp = temp * Math.pow(base,exponent);
+			result += temp+"";
+		}
+		
+		return result;
 	}
 
 	/**
@@ -231,7 +300,7 @@ public class ALU {
 	public String negation(String operand) {
 		String result = "";
 		for (int i = 0; i < operand.length(); i++) {
-			result += notGate(operand.substring(i, i + 1));
+			result += notGate(operand.charAt(i));
 		}
 		return result;
 	}
@@ -346,8 +415,11 @@ public class ALU {
 	 * @return 相加的结果，用长度为2的字符串表示，第1位表示进位，第2位表示和
 	 */
 	public String fullAdder(char x, char y, char c) {
-		// String[]
-		return null;
+		String result = "";
+		String S = xorGate(xorGate(x, y),c)+"";
+		String C = orGate(andGate(x, y), orGate(andGate(x, c), andGate(y, c)))+"";
+		result = C+S;
+		return	result;
 	}
 
 	/**
@@ -363,8 +435,29 @@ public class ALU {
 	 * @return 长度为5的字符串表示的计算结果，其中第1位是最高位进位，后4位是相加结果，其中进位不可以由循环获得
 	 */
 	public String claAdder(String operand1, String operand2, char c) {
-		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		char x1 = operand1.charAt(3);
+		char x2 = operand1.charAt(2);
+		char x3 = operand1.charAt(1);
+		char x4 = operand1.charAt(0);
+		char y1 = operand2.charAt(3);
+		char y2 = operand2.charAt(2);
+		char y3 = operand2.charAt(1);
+		char y4 = operand2.charAt(0);
+		char p1 = orGate(x1, y1);
+		char p2 = orGate(x2, y2);
+		char p3 = orGate(x3, y3);
+		char p4 = orGate(x4, y4);
+		char g1 = andGate(x1, y1);
+		char g2 = andGate(x2, y2);
+		char g3 = andGate(x3, y3);
+		char g4 = andGate(x4, y4);
+		char c1 = orGate(g1,andGate(p1, c));
+		char c2 = orGate(orGate(g2, andGate(p2, g1)),andGate(andGate(p2, p1), c));
+		char c3 = orGate(g3, orGate(andGate(p3, g2), orGate(andGate(p3, andGate(p2, g1)), andGate(p3, andGate(p2, andGate(p1, c))))));
+		char c4 = orGate(g4, orGate(andGate(p4, g3), orGate(andGate(p4, andGate(p3, g2)),orGate(andGate(p4, andGate(p3, andGate(p2, g1))), andGate(p4, andGate(p3, andGate(p2, andGate(p1, c))))))));
+		result = c4+"" + fullAdder(x4, y4, c3).charAt(1)+""+ fullAdder(x3, y3, c2).charAt(1)+""+fullAdder(x2, y2, c1).charAt(1)+""+fullAdder(x1, y1, c).charAt(1)+"";
+		return result;
 	}
 
 	/**
@@ -380,7 +473,7 @@ public class ALU {
 	 * @return operand加1的结果，长度为operand的长度加1，其中第1位指示是否溢出（溢出为1，否则为0），其余位为相加结果
 	 */
 	public String oneAdder(String operand) {
-		// TODO YOUR CODE HERE.
+		
 		return null;
 	}
 
@@ -589,44 +682,57 @@ public class ALU {
 	}
 
 	// 非门
-	private String notGate(String s) {
-		if (s.equals("1")) {
-			return "0";
+	private char notGate(char s) {
+		if (s=='1') {
+			return '0';
 		} else {
-			return "1";
+			return '1';
 		}
 	}
 
 	// 与门
-	private String andGate(String s1, String s2) {
-		if (s1.equals("1") && s2.equals("1")) {
-			return "1";
+	private char andGate(char s1, char s2) {
+		if (s1=='1'&& s2=='1') {
+			return '1';
 		} else {
-			return "0";
+			return '0';
 		}
 	}
 
 	// 或门
-	private String orGate(String s1, String s2) {
-		if (s1.equals("1") || s2.equals("1")) {
-			return "1";
+	private char orGate(char s1, char s2) {
+		if (s1=='1' || s2=='1') {
+			return '1';
 		} else {
-			return "0";
+			return '0';
 		}
 	}
 
 	// 异或门
-	private String xorGate(String s1, String s2) {
-		if (s1.equals(s2)) {
-			return "0";
+	private char xorGate(char x, char y) {
+		if (x==y) {
+			return '0';
 		} else {
-			return "1";
+			return '1';
 		}
 	}
-
+	
+	/**
+	 * 计算无符号整数的真值
+	 * @param number
+	 * @return
+	 */
+	public String integerTrueValue1(String operand){
+		int result =0;
+		for (int i = operand.length(); i > 0; i--) {
+			if (operand.substring(i - 1, i).equals("1")) {
+				result += Math.pow(2, operand.length() - i);
+			}
+		}
+		return result+"";
+	}
 	public static void main(String[] args) {
 		ALU alu = new ALU();
-		// System.out.println(alu.integerRepresentation("384", 20));
-		System.out.println(alu.floatRepresentation("-7.0", 8, 23));
+		System.out.println(alu.claAdder("1111", "1111", '1'));
 	}
 }
