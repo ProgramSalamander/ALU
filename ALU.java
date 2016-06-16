@@ -696,7 +696,7 @@ public class ALU {
 		String X = operand1;
 		String Y = operand2;
 		// 结果置零
-		for (int i = 0; i < length; i++) {
+		for (int i = 0; i < operand1.length(); i++) {
 			result += "0";
 		}
 		// 第二个操作数加一位
@@ -1023,20 +1023,28 @@ public class ALU {
 		String exponent = "";
 		String significand = "";
 		String sign = "";
-		int n = 4;
-		for(int i=0;i<4;i++){
-			if((sLength+n)%4==0){
-				n+=i;
-			}
-		}
 		String sign1 = operand1.substring(0, 1);
 		String sign2 = operand2.substring(0, 1);
 		String exponent1 = operand1.substring(1, eLength + 1);
 		String exponent2 = operand2.substring(1, eLength + 1);
 		boolean isOverFlow = false;
-		// 规格化数，运算时有效数补上隐藏位
-		String significand1 = "1" + operand1.substring(eLength + 1);
-		String significand2 = "1" + operand2.substring(eLength + 1);
+		String significand1 = "";
+		String significand2 = "";
+		// 判断是否为规格化数
+		boolean isNorm = true;
+		if (!exponent1.contains("1")) {
+			significand1 = "0" + operand1.substring(eLength + 1);
+			isNorm = false;
+		}
+		if (!exponent2.contains("1")) {
+			significand2 = "0" + operand2.substring(eLength + 1);
+			isNorm = false;
+		}
+		if (isNorm) {
+			significand1 = "1" + operand1.substring(eLength + 1);
+			significand2 = "1" + operand2.substring(eLength + 1);
+		}
+
 		if (floatTrueValue(operand1, eLength, sLength) == "0") {
 			return operand2;
 		}
@@ -1051,7 +1059,7 @@ public class ALU {
 			sign = sign2;
 		}
 		// 检查指数是否相同
-		if(exponent1.equals(exponent2)){
+		if (exponent1.equals(exponent2)) {
 			exponent = exponent1;
 		}
 		while (!exponent1.equals(exponent2)) {
@@ -1075,12 +1083,12 @@ public class ALU {
 			}
 		}
 
-		significand = signedAddition(sign1 + significand1, sign2 + significand2, sLength + 4).substring(4+ 1);
+		significand = signedAddition(sign1 + significand1, sign2 + significand2, (sLength/4)*4+4).substring(4 + 1);
 
 		// 有效数上溢
-		if (signedAddition(sign1 + significand1, sign2 + significand2, sLength + 4).charAt(4) == '1') {
-			significand = signedAddition(sign1 + significand1, sign2 + significand2, sLength + 4).substring(4);
-//			significand = logRightShift(significand, 1);
+		if (signedAddition(sign1 + significand1, sign2 + significand2, (sLength/4)*4+4).charAt(4) == '1') {
+			significand = signedAddition(sign1 + significand1, sign2 + significand2, (sLength/4)*4+4).substring(4);
+			// significand = logRightShift(significand, 1);
 			// 指数上溢
 			if (oneAdder(exponent).charAt(0) == '1') {
 				if (sign.equals("1")) {
@@ -1090,8 +1098,7 @@ public class ALU {
 				}
 			}
 			exponent = oneAdder(exponent).substring(1);
-		}
-		else {
+		} else {
 			// 有效数为0
 			if (!significand.contains("1")) {
 				return "0" + floatRepresentation("0.0", eLength, sLength);
@@ -1107,8 +1114,8 @@ public class ALU {
 				}
 			}
 		}
-		
-		result = sign + exponent + significand.substring(1,sLength+1);
+
+		result = sign + exponent + significand.substring(1, sLength + 1);
 		if (isOverFlow) {
 			result = "1" + result;
 		} else {
@@ -1157,8 +1164,104 @@ public class ALU {
 	 *         其余位从左到右依次为符号、指数（移码表示）、尾数（首位隐藏）。舍入策略为向0舍入
 	 */
 	public String floatMultiplication(String operand1, String operand2, int eLength, int sLength) {
-		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		String sign = "";
+		String significand = "";
+		String exponent = "";
+		String sign1 = operand1.substring(0, 1);
+		String sign2 = operand2.substring(0, 1);
+		String exponent1 = operand1.substring(1, eLength + 1);
+		String exponent2 = operand2.substring(1, eLength + 1);
+		String significand1 = "";
+		String significand2 = "";
+//		int dot1 = (floatTrueValue(operand1, eLength, sLength).split("\\."))[1].length();
+//		int dot2 = (floatTrueValue(operand2, eLength, sLength).split("\\."))[1].length();
+		
+		String bias = integerRepresentation((int) ((Math.pow(2, eLength - 1)) - 1)+"", eLength);
+		boolean isOverflow = false;
+		// 判断是否为规格化数
+		boolean isNorm = true;
+		if (!exponent1.contains("1")) {
+			significand1 = "0" + operand1.substring(eLength + 1);
+			isNorm = false;
+		}
+		if (!exponent2.contains("1")) {
+			significand2 = "0" + operand2.substring(eLength + 1);
+			isNorm = false;
+		}
+		if (isNorm) {
+			significand1 = "1" + operand1.substring(eLength + 1);
+			significand2 = "1" + operand2.substring(eLength + 1);
+		}
+		// 乘数或被乘数为0
+		if ((!operand1.contains("1")) || (!operand2.contains("1"))) {
+			for (int i = 0; i < eLength + sLength + 2; i++) {
+				result += "0";
+			}
+			return result;
+		}
+		// 符号位设置
+		if(sign1.equals(sign2)){
+			sign = "0";
+		}
+		else {
+			sign = "1";
+		}
+		//指数相加减去bias
+		exponent = signedAddition("0"+exponent1, "0"+exponent2, (eLength/4)*4+4).substring(6);
+		exponent = signedAddition("0"+exponent,"1"+ bias, (eLength/4)*4+4).substring(6);
+		//有效数相乘
+		//将有效数补成4的倍数
+		int length1=0;
+		if((sLength+1)%4!=0){
+			length1 = (((sLength+1)/4)*4+4)-sLength-1;
+			for(int i=0;i<length1;i++){
+				significand1="0"+significand1;
+				significand2="0"+significand2;
+			}
+		}
+		//进行乘法时还需补上正符号位,然后再补成4的倍数
+		int length2 = 4;
+		significand1="000"+"0"+significand1;
+		significand2="000"+"0"+significand2;
+		int length = significand1.length();
+		significand = integerMultiplication(significand1, significand2, length<<1).substring(1);
+		significand = significand.substring(((length1+length2)<<1));
+		
+		//规格化
+		if(significand.charAt(0)=='1'){
+			significand = significand.substring(1,1+sLength);
+			exponent = oneAdder(exponent).substring(1);
+		}
+		else if (significand.charAt(1)=='1') {
+			significand = significand.substring(2,2+sLength);
+		}
+		else {
+			String temp = significand;
+			for(int i=0;i<significand.length();i++){
+				temp = logRightShift(temp, 1);
+				if(!integerSubtraction(exponent, "0001", eLength).substring(1).contains("1")){
+					exponent = integerSubtraction(exponent, "0001", eLength).substring(1);
+					significand = temp.substring(2, 2+sLength);
+					break;
+				}
+				else {
+					exponent = integerSubtraction(exponent, "0001", eLength).substring(1);
+					if(temp.charAt(1)=='1'){
+						significand = temp.substring(2,2+sLength);
+						break;
+					}
+				}
+			}
+		}
+		result = sign+exponent+significand;
+		if(isOverflow){
+			return "1"+result;
+		}
+		else {
+			return "0"+result;
+		}
+		
 	}
 
 	/**
@@ -1237,16 +1340,22 @@ public class ALU {
 	public static void main(String[] args) {
 		ALU alu = new ALU();
 		// System.out.println(alu.oneAdder("111"));
-//		System.out.println(alu.signedAddition("0100000000", "0100000000", 12));
+		// System.out.println(alu.signedAddition("0100000000", "0100000000",
+		// 12));
 		// System.out.println(alu.integerDivision("1010", "0100", 4));
-		// System.out.println(alu.adder("0101", "0011", '0', 4));
-		// System.out.println(alu.floatRepresentation("-1.625",8,8));
-//		 System.out.println(alu.floatTrueValue("00111111100000000", 8,8));
-//		 System.out.println(alu.floatTrueValue("00111110100000000", 8,8));
-//		 System.out.println(alu.floatTrueValue("00111111101000000", 8,8));
-//		System.out.println(alu.floatAddition("00111111100000000", "00111110100000000", 8, 8, 8));
-//		System.out.println(alu.floatAddition("00111111000000000", "10111111000000000", 8, 8, 8));
-		// System.out.println(alu.floatSubtraction("00111111000000000",
-		// "10111111000000000", 8, 8, 8));
+//		 System.out.println(alu.adder("0100", "0011", '0', 8));
+//		  System.out.println(alu.floatRepresentation("0.2421875",8,8));
+		 System.out.println(alu.floatTrueValue("001111111100100000", 8,9));
+		 System.out.println(alu.floatTrueValue("001111110100100000", 8,9));
+//		System.out.println(alu.integerMultiplication("0000000110000000", "0000000110000000", 32));
+//		System.out.println(alu.integerMultiplication("0010", "0010", 4));
+//		 System.out.println(alu.floatTrueValue("00111111111100000", 8,8));
+//		System.out.println(alu.integerAddition("01111110", "01111101", 8));
+//		System.out.println(alu.integerSubtraction("01111111", "0001", 8));
+		 System.out.println(alu.floatMultiplication("001111111100100000", "001111110100100000", 8, 9).substring(1));
+		System.out.println(alu.floatTrueValue(alu.floatMultiplication("001111111100100000", "001111110100100000", 8, 9).substring(1), 8, 9));
+//		System.out.println(alu.integerMultiplication("0111000000", "0100000000", 32));
+//		System.out.println(alu.floatTrueValue("00111111100100000", 8, 8));
 	}
+	
 }
