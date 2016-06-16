@@ -1083,11 +1083,13 @@ public class ALU {
 			}
 		}
 
-		significand = signedAddition(sign1 + significand1, sign2 + significand2, (sLength/4)*4+4).substring(4 + 1);
+		significand = signedAddition(sign1 + significand1, sign2 + significand2, (sLength / 4) * 4 + 4)
+				.substring(4 + 1);
 
 		// 有效数上溢
-		if (signedAddition(sign1 + significand1, sign2 + significand2, (sLength/4)*4+4).charAt(4) == '1') {
-			significand = signedAddition(sign1 + significand1, sign2 + significand2, (sLength/4)*4+4).substring(4);
+		if (signedAddition(sign1 + significand1, sign2 + significand2, (sLength / 4) * 4 + 4).charAt(4) == '1') {
+			significand = signedAddition(sign1 + significand1, sign2 + significand2, (sLength / 4) * 4 + 4)
+					.substring(4);
 			// significand = logRightShift(significand, 1);
 			// 指数上溢
 			if (oneAdder(exponent).charAt(0) == '1') {
@@ -1174,10 +1176,12 @@ public class ALU {
 		String exponent2 = operand2.substring(1, eLength + 1);
 		String significand1 = "";
 		String significand2 = "";
-//		int dot1 = (floatTrueValue(operand1, eLength, sLength).split("\\."))[1].length();
-//		int dot2 = (floatTrueValue(operand2, eLength, sLength).split("\\."))[1].length();
-		
-		String bias = integerRepresentation((int) ((Math.pow(2, eLength - 1)) - 1)+"", eLength);
+		// int dot1 = (floatTrueValue(operand1, eLength,
+		// sLength).split("\\."))[1].length();
+		// int dot2 = (floatTrueValue(operand2, eLength,
+		// sLength).split("\\."))[1].length();
+
+		String bias = integerRepresentation((int) ((Math.pow(2, eLength - 1)) - 1) + "", eLength);
 		boolean isOverflow = false;
 		// 判断是否为规格化数
 		boolean isNorm = true;
@@ -1201,67 +1205,62 @@ public class ALU {
 			return result;
 		}
 		// 符号位设置
-		if(sign1.equals(sign2)){
+		if (sign1.equals(sign2)) {
 			sign = "0";
-		}
-		else {
+		} else {
 			sign = "1";
 		}
-		//指数相加减去bias
-		exponent = signedAddition("0"+exponent1, "0"+exponent2, (eLength/4)*4+4).substring(6);
-		exponent = signedAddition("0"+exponent,"1"+ bias, (eLength/4)*4+4).substring(6);
-		//有效数相乘
-		//将有效数补成4的倍数
-		int length1=0;
-		if((sLength+1)%4!=0){
-			length1 = (((sLength+1)/4)*4+4)-sLength-1;
-			for(int i=0;i<length1;i++){
-				significand1="0"+significand1;
-				significand2="0"+significand2;
+		// 指数相加减去bias
+		exponent = signedAddition("0" + exponent1, "0" + exponent2, (eLength / 4) * 4 + 4).substring(6);
+		exponent = signedAddition("0" + exponent, "1" + bias, (eLength / 4) * 4 + 4).substring(6);
+		// 有效数相乘
+		// 将有效数补成4的倍数
+		int length1 = 0;
+		if ((sLength + 1) % 4 != 0) {
+			length1 = (((sLength + 1) / 4) * 4 + 4) - sLength - 1;
+			for (int i = 0; i < length1; i++) {
+				significand1 = "0" + significand1;
+				significand2 = "0" + significand2;
 			}
 		}
-		//进行乘法时还需补上正符号位,然后再补成4的倍数
+		// 进行乘法时还需补上正符号位,然后再补成4的倍数
 		int length2 = 4;
-		significand1="000"+"0"+significand1;
-		significand2="000"+"0"+significand2;
+		significand1 = "000" + "0" + significand1;
+		significand2 = "000" + "0" + significand2;
 		int length = significand1.length();
-		significand = integerMultiplication(significand1, significand2, length<<1).substring(1);
-		significand = significand.substring(((length1+length2)<<1));
-		
-		//规格化
-		if(significand.charAt(0)=='1'){
-			significand = significand.substring(1,1+sLength);
+		significand = integerMultiplication(significand1, significand2, length << 1).substring(1);
+		significand = significand.substring(((length1 + length2) << 1));
+
+		// 规格化
+		if (significand.charAt(0) == '1') {
+			significand = significand.substring(1, 1 + sLength);
 			exponent = oneAdder(exponent).substring(1);
-		}
-		else if (significand.charAt(1)=='1') {
-			significand = significand.substring(2,2+sLength);
-		}
-		else {
+		} else if (significand.charAt(1) == '1') {
+			significand = significand.substring(2, 2 + sLength);
+		} else {
 			String temp = significand;
-			for(int i=0;i<significand.length();i++){
+			for (int i = 0; i < significand.length(); i++) {
 				temp = logRightShift(temp, 1);
-				if(!integerSubtraction(exponent, "0001", eLength).substring(1).contains("1")){
+				if (!integerSubtraction(exponent, "0001", eLength).substring(1).contains("1")) {
 					exponent = integerSubtraction(exponent, "0001", eLength).substring(1);
-					significand = temp.substring(2, 2+sLength);
+					significand = temp.substring(2, 2 + sLength);
 					break;
-				}
-				else {
+				} else {
 					exponent = integerSubtraction(exponent, "0001", eLength).substring(1);
-					if(temp.charAt(1)=='1'){
-						significand = temp.substring(2,2+sLength);
+					if (temp.charAt(1) == '1') {
+						significand = temp.substring(2, 2 + sLength);
 						break;
 					}
 				}
 			}
 		}
-		result = sign+exponent+significand;
-		if(isOverflow){
-			return "1"+result;
+		result = sign + exponent + significand;
+		if (isOverflow) {
+			return "1" + result;
+		} else {
+			return "0" + result;
 		}
-		else {
-			return "0"+result;
-		}
-		
+
 	}
 
 	/**
@@ -1281,8 +1280,134 @@ public class ALU {
 	 *         其余位从左到右依次为符号、指数（移码表示）、尾数（首位隐藏）。舍入策略为向0舍入
 	 */
 	public String floatDivision(String operand1, String operand2, int eLength, int sLength) {
-		// TODO YOUR CODE HERE.
-		return null;
+		String result = "";
+		String sign = "";
+		String significand = "";
+		String exponent = "";
+		String sign1 = operand1.substring(0, 1);
+		String sign2 = operand2.substring(0, 1);
+		String exponent1 = operand1.substring(1, eLength + 1);
+		String exponent2 = operand2.substring(1, eLength + 1);
+		String significand1 = "";
+		String significand2 = "";
+		// 符号位设置
+		if (sign1.equals(sign2)) {
+			sign = "0";
+		} else {
+			sign = "1";
+		}
+		// 被除数为0
+		if (!operand1.contains("1")) {
+			result = "0" + operand1;
+			return result;
+		}
+		// 除数为0
+		if (!operand2.contains("1")) {
+			for (int i = 0; i < eLength; i++) {
+				exponent += "1";
+			}
+			for (int i = 0; i < sLength; i++) {
+				significand += "0";
+			}
+			result = sign + exponent + significand;
+			return result;
+		}
+		String bias = integerRepresentation((int) ((Math.pow(2, eLength - 1)) - 1) + "", eLength);
+		boolean isOverflow = false;
+		// 判断是否为规格化数
+		boolean isNorm = true;
+		if (!exponent1.contains("1")) {
+			significand1 = "0" + operand1.substring(eLength + 1);
+			isNorm = false;
+		}
+		if (!exponent2.contains("1")) {
+			significand2 = "0" + operand2.substring(eLength + 1);
+			isNorm = false;
+		}
+		if (isNorm) {
+			significand1 = "1" + operand1.substring(eLength + 1);
+			significand2 = "1" + operand2.substring(eLength + 1);
+		}
+		if ((sLength + 1) % 4 != 0) {
+			int length1 = (((sLength + 1) / 4) * 4 + 4) - sLength - 1;
+			for (int i = 0; i < length1; i++) {
+				significand1 = "0" + significand1;
+				significand2 = "0" + significand2;
+			}
+		}
+		// 指数相减加上bias
+		if (signedAddition("0" + exponent1, "1" + exponent2, (eLength / 4) * 4 + 4).charAt(1) == '1') {
+			exponent = "1" + signedAddition("0" + exponent1, "1" + exponent2, (eLength / 4) * 4 + 4).substring(6);
+		} else {
+			exponent = "0" + signedAddition("0" + exponent1, "1" + exponent2, (eLength / 4) * 4 + 4).substring(6);
+		}
+		// 检查指数是否上溢
+		if (signedAddition(exponent, "0" + bias, (eLength / 4) * 4 + 4).charAt(0) == '1') {
+			isOverflow = true;
+		}
+		exponent = signedAddition(exponent, "0" + bias, (eLength / 4) * 4 + 4).substring(6);
+		// 检查指数是否下溢
+		if (!exponent.contains("1")) {
+			isNorm =false;
+		}
+		// 有效数相除
+		String temp = "";
+		String divisor = significand2;
+		String quotient = "";
+		String add = "0";
+		// 保留左移出去的一位
+		String extra = "0";
+
+		for (int i = 0; i < significand1.length(); i++) {
+			quotient += "0";
+		}
+		String remainder = significand1;
+		for (int i = 0; i < divisor.length(); i++) {
+			if (integerSubtraction(remainder, "0" + divisor, divisor.length()).charAt(1) == '0') {
+				remainder = integerSubtraction(remainder, "0" + divisor, divisor.length()).substring(1);
+				add = "1";
+			} else {
+				add = "0";
+			}
+			temp = extra + remainder + quotient + add;
+			temp = leftShift(temp, 1);
+			extra = temp.substring(0, 1);
+			remainder = temp.substring(1, divisor.length() + 1);
+			quotient = temp.substring(divisor.length() + 1, divisor.length() + divisor.length() + 1);
+			add = temp.substring(divisor.length() + divisor.length() + 1);
+		}
+		// 商规格化
+		if(isNorm){
+			if (quotient.charAt(0) == '1') {
+				significand = quotient.substring(1,quotient.length()-3);
+			} else {
+				temp = quotient;
+				for (int i = 0; i < quotient.length(); i++) {
+					temp = logRightShift(temp, 1);
+					if (!integerSubtraction(exponent, "0001", eLength).substring(1).contains("1")) {
+						exponent = integerSubtraction(exponent, "0001", eLength).substring(1);
+						significand = temp.substring(1, quotient.length()-3);
+						break;
+					} else {
+						exponent = integerSubtraction(exponent, "0001", eLength).substring(1);
+						if (temp.charAt(1) == '1') {
+							significand = temp.substring(1, quotient.length()-3);
+							break;
+						}
+					}
+				}
+			}
+		}
+		else {
+			significand = quotient.substring(1,quotient.length()-3);
+		}
+
+		result = sign + exponent + significand;
+		if (isOverflow) {
+			return "1" + result;
+		} else {
+			return "0" + result;
+		}
 	}
 
 	// 非门
@@ -1343,19 +1468,26 @@ public class ALU {
 		// System.out.println(alu.signedAddition("0100000000", "0100000000",
 		// 12));
 		// System.out.println(alu.integerDivision("1010", "0100", 4));
-//		 System.out.println(alu.adder("0100", "0011", '0', 8));
-//		  System.out.println(alu.floatRepresentation("0.2421875",8,8));
-		 System.out.println(alu.floatTrueValue("001111111100100000", 8,9));
-		 System.out.println(alu.floatTrueValue("001111110100100000", 8,9));
-//		System.out.println(alu.integerMultiplication("0000000110000000", "0000000110000000", 32));
-//		System.out.println(alu.integerMultiplication("0010", "0010", 4));
-//		 System.out.println(alu.floatTrueValue("00111111111100000", 8,8));
-//		System.out.println(alu.integerAddition("01111110", "01111101", 8));
-//		System.out.println(alu.integerSubtraction("01111111", "0001", 8));
-		 System.out.println(alu.floatMultiplication("001111111100100000", "001111110100100000", 8, 9).substring(1));
-		System.out.println(alu.floatTrueValue(alu.floatMultiplication("001111111100100000", "001111110100100000", 8, 9).substring(1), 8, 9));
-//		System.out.println(alu.integerMultiplication("0111000000", "0100000000", 32));
-//		System.out.println(alu.floatTrueValue("00111111100100000", 8, 8));
+		// System.out.println(alu.adder("0100", "0011", '0', 8));
+		// System.out.println(alu.floatRepresentation("0.2421875",8,8));
+		System.out.println(alu.floatTrueValue("01000000011100000", 8, 8));
+		System.out.println(alu.floatTrueValue("00111111110000000", 8, 8));
+		// System.out.println(alu.integerMultiplication("0000000110000000",
+		// "0000000110000000", 32));
+		// System.out.println(alu.integerMultiplication("0010", "0010", 4));
+		// System.out.println(alu.floatTrueValue("00111111111100000", 8,8));
+		// System.out.println(alu.integerAddition("01111110", "01111101", 8));
+		System.out.println(alu.floatMultiplication("01000000011100000", "00111111110000000", 8, 8).substring(1));
+		System.out.println(alu
+				.floatTrueValue(alu.floatMultiplication("01000000011100000", "00111111110000000", 8, 8).substring(1), 8, 8));
+		System.out.println(alu.floatDivision("01000000011100000", "00111111110000000", 8, 8).substring(1));
+		System.out.println(alu
+				.floatTrueValue(alu.floatDivision("01000000011100000", "00111111110000000", 8, 8).substring(1), 8, 8));
+		// System.out.println(alu.integerMultiplication("0111000000",
+		// "0100000000", 32));
+		// System.out.println(alu.floatTrueValue("00111111100100000", 8, 8));
+		// System.out.println(alu.integerSubtraction("0111000000", "0100000000",
+		// 12));
 	}
-	
+
 }
